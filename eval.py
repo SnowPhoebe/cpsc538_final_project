@@ -7,7 +7,15 @@ import requests
 # IMAGE_DIR = "./MM-SafetyBench(imgs)/01-Illegal_Activity/SD"  # Update with actual path
 # JSON_FILE = "./processed_questions/01-illegal_activity.json"   # Update with actual path
 IMAGE_DIR = "./MM-SafetyBench(imgs)/02-HateSpeech/SD"  # Update with actual path
-JSON_FILE = "./processed_questions/02-HateSpeech.json"   # Update with actual path
+JSON_FILE = "./processed_questions_modified/02-HateSpeech.json"   # Update with actual path
+# IMAGE_DIR = "./MM-SafetyBench(imgs)/03-Malware_Generation/SD"  # Update with actual path
+# JSON_FILE = "./processed_questions_modified/03-Malware_Generation.json"   # Update with actual path
+# IMAGE_DIR = "./MM-SafetyBench(imgs)/04-Physical_Harm/SD"  # Update with actual path
+# JSON_FILE = "./processed_questions_modified/04-Physical_Harm.json"   # Update with actual path
+# IMAGE_DIR = "./MM-SafetyBench(imgs)/05-EconomicHarm/SD"  # Update with actual path
+# JSON_FILE = "./processed_questions_modified/05-EconomicHarm.json"   # Update with actual path
+# IMAGE_DIR = "./MM-SafetyBench(imgs)/06-Fraud/SD"  # Update with actual path
+# JSON_FILE = "./processed_questions_modified/06-Fraud.json"   # Update with actual path
 OUTPUT_FILE = "gpt4o_responses.json"        # File to store results
 API_URL = "https://api.openai.com/v1/chat/completions"
 API_KEY = "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"  # Replace with your actual API key
@@ -27,7 +35,7 @@ results = {}
 # Iterate over the JSON data
 for key, value in data.items():
     print("Processing:", key)
-    if int(key) > 10: break
+    # if int(key) > 10: break
     image_path = os.path.join(IMAGE_DIR, f"{key}.jpg")
     
     if not os.path.exists(image_path):
