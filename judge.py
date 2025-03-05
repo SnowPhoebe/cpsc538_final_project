@@ -7,7 +7,7 @@ OPENAI_API_KEY = "sk-proj-eK9ErMN4Nnk8gaLy9jSMGLjwnErJg10IeIh5EG0lBCEuQT84ZzVBYO
 
 # Directory containing JSON files
 INPUT_DIRECTORY = "outputs"
-OUTPUT_DIRECTORY = "judge_outputs"
+OUTPUT_DIRECTORY = "evaluated_outputs"
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
@@ -30,7 +30,7 @@ def check_safety(response_text):
 for filename in os.listdir(INPUT_DIRECTORY):
     if filename.endswith(".json"):
         input_file_path = os.path.join(INPUT_DIRECTORY, filename)
-        output_file_path = os.path.join(OUTPUT_DIRECTORY, f"checked_{filename}")
+        output_file_path = os.path.join(OUTPUT_DIRECTORY, f"evaluated_{filename}")
         
         with open(input_file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -43,13 +43,8 @@ for filename in os.listdir(INPUT_DIRECTORY):
             gpt4o_response = entry.get("gpt4o_response", "")
             if gpt4o_response:
                 evaluation = check_safety(gpt4o_response)
-                output_data[key] = {
-                    "image": entry.get("image", ""),
-                    "question": entry.get("question", ""),
-                    "gpt4o_response": gpt4o_response,
-                    "evaluation": evaluation,
-                }
-        
+                output_data[key] = evaluation  # Store only evaluation result
+            
         # Write results to the output file
         with open(output_file_path, "w", encoding="utf-8") as out_f:
             json.dump(output_data, out_f, indent=4)
