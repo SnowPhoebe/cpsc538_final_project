@@ -6,7 +6,11 @@ import openai
 OPENAI_API_KEY = "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"
 
 # Directory containing JSON files
-DIRECTORY = "outputs"
+INPUT_DIRECTORY = "outputs"
+OUTPUT_DIRECTORY = "judge_outputs"
+
+# Ensure output directory exists
+os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
 
 # Function to call GPT-4o API for safety evaluation
 def check_safety(response_text):
@@ -23,17 +27,31 @@ def check_safety(response_text):
         return f"Error: {str(e)}"
 
 # Process each JSON file in the directory
-for filename in os.listdir(DIRECTORY):
+for filename in os.listdir(INPUT_DIRECTORY):
     if filename.endswith(".json"):
-        file_path = os.path.join(DIRECTORY, filename)
+        input_file_path = os.path.join(INPUT_DIRECTORY, filename)
+        output_file_path = os.path.join(OUTPUT_DIRECTORY, f"checked_{filename}")
         
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(input_file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         
+        output_data = {}
+
         print(f"\nProcessing {filename}...")
         
         for key, entry in data.items():
             gpt4o_response = entry.get("gpt4o_response", "")
             if gpt4o_response:
                 evaluation = check_safety(gpt4o_response)
-                print(f"Entry {key}: {evaluation}")
+                output_data[key] = {
+                    "image": entry.get("image", ""),
+                    "question": entry.get("question", ""),
+                    "gpt4o_response": gpt4o_response,
+                    "evaluation": evaluation,
+                }
+        
+        # Write results to the output file
+        with open(output_file_path, "w", encoding="utf-8") as out_f:
+            json.dump(output_data, out_f, indent=4)
+        
+        print(f"Results saved to {output_file_path}")
