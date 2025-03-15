@@ -2,46 +2,50 @@ import os
 import json
 import base64
 import requests
+from PIL import Image, ImageDraw, ImageFont
+from io import BytesIO
 
 # Constants
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/01-Illegal_Activity/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions/01-illegal_activity.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/02-HateSpeech/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/02-HateSpeech.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/03-Malware_Generation/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/03-Malware_Generation.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/04-Physical_Harm/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/04-Physical_Harm.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/05-EconomicHarm/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/05-EconomicHarm.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/06-Fraud/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/06-Fraud.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/07-Sex/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/07-Sex.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/08-Political_Lobbying/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/08-Political_Lobbying.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/09-Privacy_Violence/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/09-Privacy_Violence.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/10-Legal_Opinion/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/10-Legal_Opinion.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/11-Financial_Advice/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/11-Financial_Advice.json"   # Update with actual path
-# IMAGE_DIR = "./MM-SafetyBench(imgs)/12-Health_Consultation/SD"  # Update with actual path
-# JSON_FILE = "./processed_questions_modified/12-Health_Consultation.json"   # Update with actual path
-IMAGE_DIR = "./MM-SafetyBench(imgs)/13-Gov_Decision/SD"  # Update with actual path
-JSON_FILE = "./processed_questions_modified/13-Gov_Decision.json"   # Update with actual path
+JSON_FILE = "./processed_questions/01-illegal_activity.json"  # Update with actual path
 OUTPUT_FILE = "gpt4o_responses.json"        # File to store results
 API_URL = "https://api.openai.com/v1/chat/completions"
-API_KEY = "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"  # Replace with your actual API key
+API_KEY = "YOUR_OPENAI_API_KEY"  # Replace with your actual API key
 
 # Load JSON file
 with open(JSON_FILE, "r", encoding="utf-8") as f:
     data = json.load(f)
 
-# Function to encode image as base64
-def encode_image(image_path):
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode("utf-8")
+# Function to create a typography image
+def create_typography_image(text):
+    """Generates an image with the given text in a typography style."""
+    img_width, img_height = 600, 300  # Set image size
+    background_color = (255, 255, 255)  # White background
+    text_color = (0, 0, 0)  # Black text
+
+    # Create a blank image
+    img = Image.new("RGB", (img_width, img_height), background_color)
+    draw = ImageDraw.Draw(img)
+
+    # Load a font (adjust path or install fonts as needed)
+    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # Adjust for Windows/Mac
+    font_size = 30
+    font = ImageFont.truetype(font_path, font_size)
+
+    # Get text size
+    text_width, text_height = draw.textsize(text, font=font)
+
+    # Calculate position (center the text)
+    x = (img_width - text_width) // 2
+    y = (img_height - text_height) // 2
+
+    # Draw text
+    draw.text((x, y), text, fill=text_color, font=font)
+
+    # Convert image to base64
+    img_bytes = BytesIO()
+    img.save(img_bytes, format="JPEG")
+    img_bytes = img_bytes.getvalue()
+    return base64.b64encode(img_bytes).decode("utf-8")
 
 # Store results in a dictionary
 results = {}
@@ -49,21 +53,15 @@ results = {}
 # Iterate over the JSON data
 for key, value in data.items():
     print("Processing:", key)
-    # if int(key) > 10: break
-    image_path = os.path.join(IMAGE_DIR, f"{key}.jpg")
-    
-    if not os.path.exists(image_path):
-        print(f"Warning: Image {image_path} not found. Skipping.")
-        continue
-    
+
     # Extract relevant text
-    rephrased_question = value.get("Rephrased Question(SD)", "")
+    rephrased_question = value.get("Changed Question", "")
     if not rephrased_question:
-        print(f"Skipping entry {key} due to missing 'Rephrased Question(SD)'.")
+        print(f"Skipping entry {key} due to missing 'Changed Question'.")
         continue
 
-    # Convert image to base64
-    image_base64 = encode_image(image_path)
+    # Generate typography image
+    image_base64 = create_typography_image(rephrased_question)
 
     # Construct API payload
     payload = {
@@ -72,7 +70,6 @@ for key, value in data.items():
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": rephrased_question},
                     {
                         "type": "image_url",
                         "image_url": {
@@ -97,14 +94,14 @@ for key, value in data.items():
     if response.status_code == 200:
         result = response.json()
         results[key] = {
-            "image": f"{key}.jpg",
+            "image": f"Generated for {key}",
             "question": rephrased_question,
             "gpt4o_response": result['choices'][0]['message']['content']
         }
     else:
-        print(f"Error for {key}.jpg: {response.text}")
+        print(f"Error for {key}: {response.text}")
         results[key] = {
-            "image": f"{key}.jpg",
+            "image": f"Generated for {key}",
             "question": rephrased_question,
             "error": response.text
         }
