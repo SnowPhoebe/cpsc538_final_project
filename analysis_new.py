@@ -6,7 +6,7 @@ import numpy as np
 
 # Define the folder paths
 outputs_folder = "outputs_all"  # Original LLM responses
-evaluated_folder = "text_only_evaluated_outputs"  # Pass/Fail evaluation
+evaluated_folder = "pure_image_typography_image_evaluated_outputs"  # Pass/Fail evaluation
 output_folder = "charts_output"
 
 # Create output directory if it doesn't exist

@@ -7,73 +7,24 @@ from io import BytesIO
 
 # Constants
 JSON_FOLDER = "./processed_questions/"  # Directory containing all JSON files
-OUTPUT_FOLDER = "./typography_responses/"  # Directory to save results
-IMAGE_SAVE_DIR = "./generated_images/"  # Directory to save images
+OUTPUT_FOLDER = "./typography_image_only_responses/"  # Directory to save results
+GENERATED_IMAGES_DIR = "./typography_image_only/generated_images/"  # Directory containing generated images
+SAFETY_BENCH_DIR = "./MM-SafetyBench(imgs)/"  # Directory containing MM-SafetyBench images
 API_URL = "https://api.openai.com/v1/chat/completions"
-API_KEY = "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"  # Replace with your actual API key
+API_KEY = "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"  # Replace with actual API key
 
 # Ensure required directories exist
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-os.makedirs(IMAGE_SAVE_DIR, exist_ok=True)
 
 
-def create_typography_image(text, image_name):
-    """Generates and saves an image with the given text in a typography style."""
-    img_width = 600  # Fixed width
-    background_color = (255, 255, 255)  # White background
-    text_color = (0, 0, 0)  # Black text
-    padding = 20  # Space around text
-
-    # Load a font (adjust path or install fonts as needed)
-    font_path = "/System/Library/Fonts/Supplemental/Arial.ttf"  # macOS
-    font_size = 30
-    font = ImageFont.truetype(font_path, font_size)
-
-    # Word wrapping to prevent overflow
-    max_width = img_width - 2 * padding
-    lines = []
-    words = text.split()
-    current_line = ""
-
-    draw = ImageDraw.Draw(Image.new("RGB", (1, 1)))  # Temporary draw object
-
-    for word in words:
-        test_line = current_line + " " + word if current_line else word
-        text_bbox = draw.textbbox((0, 0), test_line, font=font)
-        test_width = text_bbox[2] - text_bbox[0]  # Calculate text width
-
-        if test_width <= max_width:
-            current_line = test_line
-        else:
-            lines.append(current_line)
-            current_line = word
-    lines.append(current_line)  # Add the last line
-
-    # Calculate required height dynamically
-    line_height = font_size + 10  # Line spacing
-    img_height = padding * 2 + len(lines) * line_height
-
-    # Create the final image
-    img = Image.new("RGB", (img_width, img_height), background_color)
-    draw = ImageDraw.Draw(img)
-
-    # Draw text line by line
-    y_start = padding
-    for line in lines:
-        text_bbox = draw.textbbox((0, 0), line, font=font)
-        text_width = text_bbox[2] - text_bbox[0]
-        x = (img_width - text_width) // 2
-        draw.text((x, y_start), line, fill=text_color, font=font)
-        y_start += line_height
-
-    # Save image
-    image_path = os.path.join(IMAGE_SAVE_DIR, image_name)
-    img.save(image_path)
-
-    # Convert image to base64
-    img_bytes = BytesIO()
-    img.save(img_bytes, format="JPEG")
-    return base64.b64encode(img_bytes.getvalue()).decode("utf-8"), image_path
+def encode_image_to_base64(image_path):
+    """Encodes an image as a base64 string."""
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode("utf-8")
+    except FileNotFoundError:
+        print(f"Warning: Image not found at {image_path}")
+        return None
 
 
 # Loop through all JSON files in the folder
@@ -99,12 +50,21 @@ for json_filename in os.listdir(JSON_FOLDER):
         if not rephrased_question:
             print(f"Skipping entry {key} due to missing 'Changed Question'.")
             continue
+        
+        category_name = json_filename.split(".")[0]
+        # Find corresponding images
+        generated_image_path = os.path.join(GENERATED_IMAGES_DIR, f"{json_filename[:-5]}_{key}.jpg")
+        safety_bench_image_path = os.path.join(SAFETY_BENCH_DIR, f"{category_name}", "SD", f"{key}.jpg")
 
-        # Generate typography image and save it
-        image_name = f"{json_filename[:-5]}_{key}.jpg"  # Unique image name
-        image_base64, saved_image_path = create_typography_image(rephrased_question, image_name)
+        # Encode images to base64
+        generated_image_base64 = encode_image_to_base64(generated_image_path)
+        safety_bench_image_base64 = encode_image_to_base64(safety_bench_image_path)
 
-        # Construct API payload
+        if not generated_image_base64 or not safety_bench_image_base64:
+            print(f"Skipping {key} due to missing images.")
+            continue
+
+        # Construct API payload with two images
         payload = {
             "model": "gpt-4o",
             "messages": [
@@ -114,7 +74,13 @@ for json_filename in os.listdir(JSON_FOLDER):
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_base64}"
+                                "url": f"data:image/jpeg;base64,{generated_image_base64}"
+                            }
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{safety_bench_image_base64}"
                             }
                         }
                     ]
@@ -135,14 +101,16 @@ for json_filename in os.listdir(JSON_FOLDER):
         if response.status_code == 200:
             result = response.json()
             results[key] = {
-                "image": saved_image_path,
+                "generated_image": generated_image_path,
+                "safety_bench_image": safety_bench_image_path,
                 "question": rephrased_question,
                 "gpt4o_response": result['choices'][0]['message']['content']
             }
         else:
             print(f"Error for {key}: {response.text}")
             results[key] = {
-                "image": saved_image_path,
+                "generated_image": generated_image_path,
+                "safety_bench_image": safety_bench_image_path,
                 "question": rephrased_question,
                 "error": response.text
             }
@@ -156,5 +124,4 @@ for json_filename in os.listdir(JSON_FOLDER):
 
     print(f"Responses saved to {output_path}")
 
-print(f"All typography images saved in: {IMAGE_SAVE_DIR}")
 print(f"All responses saved in: {OUTPUT_FOLDER}")
