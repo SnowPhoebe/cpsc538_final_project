@@ -6,7 +6,10 @@ import numpy as np
 
 # Define the folder paths
 outputs_folder = "outputs_all"  # Original LLM responses
-evaluated_folder = "pure_image_typography_image_evaluated_outputs"  # Pass/Fail evaluation
+# evaluated_folder = "./text_pure_image_typography_image/text_pure_image_typography_image_outputs"  # Pass/Fail evaluation
+# evaluated_folder = "./text_pure_image/evaluated_outputs_all"  # Pass/Fail evaluation
+# evaluated_folder = "./typography_image_only/typography_image_only_evaluated_outputs"  # Pass/Fail evaluation
+evaluated_folder = "./pure_image_typography_image/pure_image_typography_image_evaluated_outputs"  # Pass/Fail evaluation
 output_folder = "charts_output"
 
 # Create output directory if it doesn't exist
@@ -86,7 +89,9 @@ for filename in os.listdir(evaluated_folder):
 # **Sort categories in reverse numerical order**
 def extract_numeric_prefix(category_name):
     # match = re.match(r"(\d+)_", category_name)  # Extract number at the beginning
-    match = re.search(r"text_only_(\d+)_", category_name)
+    # match = re.search(r"text_only_(\d+)_", category_name)
+    # match = re.search(r"evaluated_(\d+)-", category_name)
+    match = re.search(r"evaluated_gpt4o_responses_(\d+)_", category_name)
     return int(match.group(1)) if match else float("inf")  # Convert to integer for sorting
 
 # Sort category names in reverse order
