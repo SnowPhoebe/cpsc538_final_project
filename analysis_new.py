@@ -6,10 +6,12 @@ import numpy as np
 
 # Define the folder paths
 outputs_folder = "outputs_all"  # Original LLM responses
-# evaluated_folder = "./text_pure_image_typography_image/text_pure_image_typography_image_outputs"  # Pass/Fail evaluation
+# evaluated_folder = "./text_only_outputs"
+evaluated_folder = "./text_pure_image_typography_image/text_pure_image_typography_image_outputs"  # Pass/Fail evaluation
 # evaluated_folder = "./text_pure_image/evaluated_outputs_all"  # Pass/Fail evaluation
 # evaluated_folder = "./typography_image_only/typography_image_only_evaluated_outputs"  # Pass/Fail evaluation
-evaluated_folder = "./pure_image_typography_image/pure_image_typography_image_evaluated_outputs"  # Pass/Fail evaluation
+# evaluated_folder = "./pure_image_typography_image/pure_image_typography_image_evaluated_outputs"  # Pass/Fail evaluation
+# evaluated_folder = "./text_only/text_only_evaluated_outputs"  # Pass/Fail evaluation
 output_folder = "charts_output"
 
 # Create output directory if it doesn't exist
@@ -154,3 +156,42 @@ plt.savefig(output_path, bbox_inches="tight")
 plt.close()
 
 print(f"Updated chart saved as '{output_path}'.")
+
+# Compute the total across all categories
+total_count = np.sum(pass_values) + np.sum(failed_values) + np.sum(null_values)
+
+# Calculate percentage contribution of each type
+pass_percentage = (np.sum(pass_values) / total_count) * 100 if total_count > 0 else 0
+failed_percentage = (np.sum(failed_values) / total_count) * 100 if total_count > 0 else 0
+null_percentage = (np.sum(null_values) / total_count) * 100 if total_count > 0 else 0
+
+# Print the calculated percentages
+print(f"Pass Percentage: {pass_percentage:.2f}%")
+print(f"Failed Percentage: {failed_percentage:.2f}%")
+print(f"Null Percentage: {null_percentage:.2f}%")
+
+# # Visualize the overall distribution using a pie chart
+# fig, ax = plt.subplots(figsize=(6, 6))
+# labels = ["Pass", "Not Pass", "Refusal-Based Pass"]
+# sizes = [pass_percentage, failed_percentage, null_percentage]
+# colors = ["#0072B2", "#E69F00", "#003366"]
+
+# ax.pie(sizes, labels=labels, autopct="%1.1f%%", colors=colors, startangle=140)
+# ax.set_title("Overall Distribution of Pass, Not Pass, and Refusal-Based Pass")
+
+# # Save the figure
+# pie_chart_path = os.path.join(output_folder, "overall_distribution_pie_chart.png")
+# plt.savefig(pie_chart_path, bbox_inches="tight")
+# plt.close()
+
+# print(f"Overall distribution pie chart saved as '{pie_chart_path}'.")
+
+for category, percentages in all_category_percentages.items():
+    print(f"Category: {category}")
+    failed_percentage = 0
+    for key, value in percentages.items():
+        if key == "Unsafe" or key == "Unethical" or key == "Harmful":
+            failed_percentage += value
+        print(f"  {key}: {value:.2f}%")
+    print(f"Failed Percentage: {failed_percentage:.2f}%")
+    print("-" * 40)  # Separator for better readability

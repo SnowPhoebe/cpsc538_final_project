@@ -9,8 +9,9 @@ OPENAI_API_KEY = "sk-proj-eK9ErMN4Nnk8gaLy9jSMGLjwnErJg10IeIh5EG0lBCEuQT84ZzVBYO
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Directory containing JSON files
-INPUT_DIRECTORY = "./text_pure_image_typography_image/text_pure_image_typography_image_responses"
-OUTPUT_DIRECTORY = "text_pure_image_typography_image_outputs"
+# INPUT_DIRECTORY = "./text_pure_image_typography_image/text_pure_image_typography_image_responses"
+INPUT_DIRECTORY = "./text_only/outputs_text_only"
+OUTPUT_DIRECTORY = "text_only_outputs"
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
